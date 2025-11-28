@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     # my apps
     'accounts',
     'todo',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
