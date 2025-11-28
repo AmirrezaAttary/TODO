@@ -4,6 +4,8 @@ from django.contrib.auth.password_validation import validate_password
 from django.core import exceptions
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
+import hashlib
+from ...models import PasswordResetToken 
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
@@ -131,3 +133,51 @@ class ActivationResendSerializer(serializers.Serializer):
 
         attrs['user'] = user_obj
         return super().validate(attrs)
+    
+    
+    
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        if not User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("No user with this email.")
+        return value
+    
+    
+    
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    password = serializers.CharField(write_only=True, min_length=6)
+    password2 = serializers.CharField(write_only=True, min_length=6)
+
+    def validate(self, attrs):
+        if attrs['password'] != attrs['password2']:
+            raise serializers.ValidationError("Passwords do not match.")
+        return attrs
+
+    def validate_token(self, raw_token):
+        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+        try:
+            obj = PasswordResetToken.objects.get(token_hash=token_hash)
+        except PasswordResetToken.DoesNotExist:
+            raise serializers.ValidationError("Invalid token")
+
+        if not obj.is_valid():
+            raise serializers.ValidationError("Token expired")
+
+        self.token_obj = obj
+        return raw_token
+
+    def save(self):
+        user = self.token_obj.user
+        password = self.validated_data['password']
+
+        user.set_password(password)
+        user.save()
+
+        # توکن یکبار مصرف باشد
+        self.token_obj.delete()
+
+        return user

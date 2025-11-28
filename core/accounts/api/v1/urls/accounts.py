@@ -23,6 +23,9 @@ urlpatterns = [
     # change password
     path('change-password/',views.ChangePasswordApiView.as_view(), name='change-password'),
     
+    # password reset
+    path("password-reset/", views.PasswordResetRequestAPIView.as_view(), name='password-reset'),
+    path("password-reset/confirm/", views.PasswordResetConfirmAPIView.as_view(), name='password-reset-confirm'),
 
     # login token
     path('token/login', views.ObtainAuthTokenView.as_view(), name='token-login'),
