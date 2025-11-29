@@ -20,6 +20,7 @@ services:
     environment:
       - SECRET_KEY=django-insecure-^qy2ug*4^0xx0^b+(^ih-#w$+j_)i!*4ftaeiu0r0a4%^-=(g9
       - DEBUG=True
+      - OPENWEATHER_API_KEY=73c23770764d127fae65f27ffd0971f0
 
   worker:
     build: .
