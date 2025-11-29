@@ -1,9 +1,13 @@
+import requests
 from django.shortcuts import redirect
 from django.views.generic.list import ListView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.views import View
+from django.http import JsonResponse
+from django.views.decorators.cache import cache_page
+from django.conf import settings
 from .models import Task
 from .forms import TodoUpdateForm
 from .permissions import UserIsOwnerMixin
@@ -56,3 +60,24 @@ class TodoUpdateView(LoginRequiredMixin,UserIsOwnerMixin,UpdateView):
     model = Task
     form_class = TodoUpdateForm
     success_url = "/"
+
+
+@cache_page(60 * 20)  # کش کردن پاسخ به مدت ۲۰ دقیقه
+def weather_view(request, city="تهران"):
+    api_key = settings.OPENWEATHER_API_KEY  # از settings یا مستقیماً کلید را قرار دهید
+    url = f'https://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric&lang=fa'
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        data = response.json()
+        result = {
+            'city': data['name'],
+            'country': data['sys']['country'],
+            'temperature': data['main']['temp'],
+            'description': data['weather'][0]['description'],
+            'humidity': data['main']['humidity'],
+            'wind_speed': data['wind']['speed']
+        }
+        return JsonResponse(result)
+    else:
+        return JsonResponse({'error': 'شهر یافت نشد'}, status=404)

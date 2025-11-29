@@ -173,3 +173,7 @@ EMAIL_PORT = 25
 # CELERY SETTINGS
 CELERY_BROKER_URL = 'redis://redis:6379/0'  # Use Redis as the message broker
 CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+
+
+# caching setting
+OPENWEATHER_API_KEY = config("OPENWEATHER_API_KEY",default="73c23770764d127fae65f27ffd0971f0")
