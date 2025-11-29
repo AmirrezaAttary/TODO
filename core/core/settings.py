@@ -49,7 +49,8 @@ INSTALLED_APPS = [
     'drf_yasg',
     
     # other apps
-    'mail_templated'
+    'mail_templated',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -167,3 +168,8 @@ EMAIL_HOST = 'smtp4dev'
 EMAIL_HOST_USER = ''
 EMAIL_HOST_PASSWORD = ''
 EMAIL_PORT = 25
+
+
+# CELERY SETTINGS
+CELERY_BROKER_URL = 'redis://redis:6379/0'  # Use Redis as the message broker
+CELERY_RESULT_BACKEND = "redis://redis:6379/0"
