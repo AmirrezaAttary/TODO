@@ -7,5 +7,8 @@ python-decouple==3.8
 coreapi==2.3.3
 djangorestframework-simplejwt
 django-mail-templated
+black
+flake8
+pytest-django
 # api doc
 drf-yasg[validation]
