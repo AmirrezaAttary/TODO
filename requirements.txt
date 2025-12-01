@@ -14,6 +14,8 @@ Faker
 celery
 Redis
 django-celery-beat
+django-redis
+gunicorn
 # api doc
 drf-yasg[validation]
 
