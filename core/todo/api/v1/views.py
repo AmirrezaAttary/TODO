@@ -6,6 +6,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import PermissionDenied
 from rest_framework import viewsets
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
@@ -17,16 +18,22 @@ from .permissions import IsOwnerOrReadOnly
 
 class TaskModelViewSet(viewsets.ModelViewSet):
     '''getting a list of tasks and creating new task'''
-    permission_classes = [IsAuthenticated,IsOwnerOrReadOnly]
+    permission_classes = [IsAuthenticated]
     serializer_class = TaskSerializer
     pagination_class = LargeResultsSetPagination
-    filter_backends = [DjangoFilterBackend,SearchFilter,OrderingFilter]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['complete']
     search_fields = ['title']
     ordering_fields = ['created_date']
-    
+
     def get_queryset(self):
-        return Task.objects.filter(user=self.request.user)
+        return Task.objects.all()  # برای list و filter
+
+    def get_object(self):
+        obj = super().get_object()
+        if obj.user != self.request.user:
+            raise PermissionDenied("شما اجازه دسترسی به این تسک را ندارید")
+        return obj
     
 
 # accounts/api/v1/views/weather.py یا هرجایی که ساختار پروژه‌ات است
