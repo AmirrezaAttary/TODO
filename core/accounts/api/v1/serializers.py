@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from accounts.models import User , Profile
+from accounts.models import User , Profile,PasswordResetToken
 from django.contrib.auth.password_validation import validate_password
 from django.core import exceptions
 from django.contrib.auth import authenticate
@@ -31,8 +31,6 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return User.objects.create_user(**validated_data)
 
     
-    
-
 
 
 class CustomAuthTokenSerializer(serializers.Serializer):
@@ -138,7 +136,8 @@ class ActivationResendSerializer(serializers.Serializer):
     
 
 class PasswordResetRequestSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+
+    email = serializers.CharField(required=True)
 
     def validate_email(self, value):
         if not User.objects.filter(email=value).exists():
@@ -148,7 +147,6 @@ class PasswordResetRequestSerializer(serializers.Serializer):
     
     
 class PasswordResetConfirmSerializer(serializers.Serializer):
-    token = serializers.CharField()
     password = serializers.CharField(write_only=True, min_length=6)
     password2 = serializers.CharField(write_only=True, min_length=6)
 
@@ -157,27 +155,10 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
             raise serializers.ValidationError("Passwords do not match.")
         return attrs
 
-    def validate_token(self, raw_token):
-        token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-        try:
-            obj = PasswordResetToken.objects.get(token_hash=token_hash)
-        except PasswordResetToken.DoesNotExist:
-            raise serializers.ValidationError("Invalid token")
-
-        if not obj.is_valid():
-            raise serializers.ValidationError("Token expired")
-
-        self.token_obj = obj
-        return raw_token
-
-    def save(self):
-        user = self.token_obj.user
+    def save(self, user):
+        """رمز عبور جدید را برای کاربر ست می‌کند"""
         password = self.validated_data['password']
-
         user.set_password(password)
         user.save()
-
-        # توکن یکبار مصرف باشد
-        self.token_obj.delete()
-
         return user
+
