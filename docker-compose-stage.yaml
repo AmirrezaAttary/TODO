@@ -5,10 +5,13 @@ services:
     image: postgres:15-alpine
     volumes:
       - ./postgres/data:/var/lib/postgresql/data
+      - ./pg_hba.conf:/docker-entrypoint-initdb.d/pg_hba.conf:ro
+
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
+      - POSTGRES_HOST_AUTH_METHOD=trust
     expose:
       - 5432
     ports:
@@ -26,7 +29,7 @@ services:
   todo:
     build: .
     container_name: todo
-    command:  gunicorn core.wsgi --bind 0.0.0.0:8000
+    command: sh -c "python manage.py migrate --noinput && gunicorn core.wsgi --bind 0.0.0.0:8000"
     volumes:
       - ./core:/app
 
