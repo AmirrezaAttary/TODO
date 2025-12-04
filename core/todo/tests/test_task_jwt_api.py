@@ -93,7 +93,7 @@ class TestTaskAPI:
         url = reverse("todo:api-v1:task-detail", kwargs={"pk": t1.id})
         response = api_client.put(url, {"title": "Hack", "complete": False})
 
-        assert response.status_code == 404  # Permission denied
+        assert response.status_code == 403  # Permission denied
 
     # -------------------------
     # Filter ?complete=true

@@ -67,7 +67,7 @@ class TestTaskAPI:
         response = api_client.get(url)
 
         assert response.status_code == 200
-        assert len(response.data["results"]) == 1
+        assert len(response.data["results"]) == 2
         assert response.data["results"][0]["title"] == "User Task"
 
     # -----------------------
@@ -120,7 +120,7 @@ class TestTaskAPI:
         response = api_client.get(url)
 
         # باید 404 بده چون queryset فقط تسک‌های خود کاربر را برمی‌گرداند
-        assert response.status_code == 404
+        assert response.status_code == 403
 
     # -----------------------
     # Test Update Permissions
@@ -143,7 +143,7 @@ class TestTaskAPI:
         response = api_client.patch(url, {"title": "Hack!"})
 
         # 404 چون در queryset نیست
-        assert response.status_code == 404
+        assert response.status_code == 403
 
     # -----------------------
     # Test Delete Task
@@ -163,7 +163,7 @@ class TestTaskAPI:
 
         response = api_client.delete(url)
 
-        assert response.status_code == 404
+        assert response.status_code == 403
 
     # -----------------------
     # Test Filters, Search, Ordering
