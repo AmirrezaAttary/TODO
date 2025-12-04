@@ -34,11 +34,11 @@ jobs:
 
     - name: Run migrations
       run: |
-        docker compose -f Docker-compose.yml run --rm todo sh -c "python manage.py migrate --noinput"
+        docker compose -f Docker-compose.yml run --rm backend sh -c "python manage.py migrate --noinput"
 
     - name: Run tests
       run: |
-        docker compose -f Docker-compose.yml run --rm todo pytest -vv
+        docker compose -f Docker-compose.yml run --rm backend pytest -vv
 
     - name: Stop Docker Compose
       if: always()
@@ -73,16 +73,16 @@ jobs:
           docker-compose -f docker-compose-stage.yml pull
           docker-compose -f docker-compose-stage.yml up -d --build
 
-          # صبر تا todo آماده شود
-          until docker exec todo curl -s localhost:8000; do
-            echo "Waiting for todo..."
+          # صبر تا backend آماده شود
+          until docker exec backend curl -s localhost:8000; do
+            echo "Waiting for backend..."
             sleep 2
           done
 
           # نصب پکیج‌ها، مایگریشن و جمع‌آوری static
-          docker exec todo sh -c "pip install -r requirements.txt"
-          docker exec todo sh -c "python manage.py migrate"
-          docker exec todo sh -c "python manage.py collectstatic --noinput"
+          docker exec backend sh -c "pip install -r requirements.txt"
+          docker exec backend sh -c "python manage.py migrate"
+          docker exec backend sh -c "python manage.py collectstatic --noinput"
 
           # ریستارت کل کانتینرها
           docker-compose -f docker-compose-stage.yml restart
