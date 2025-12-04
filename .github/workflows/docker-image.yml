@@ -1,0 +1,90 @@
+name: Django Tests with Docker Compose
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Debug workspace
+      run: |
+        echo "Current folder:"
+        pwd
+        echo "List content:"
+        ls -R .
+
+    - name: Build Docker containers
+      run: |
+        docker compose -f Docker-compose.yml build
+
+    - name: Start DB and Redis
+      run: |
+        docker compose -f Docker-compose.yml up -d db redis
+        echo "⏳ Waiting for Postgres..."
+        until docker exec db pg_isready -U postgres; do sleep 1; done
+        echo "Postgres Ready!"
+
+    - name: Run migrations
+      run: |
+        docker compose -f Docker-compose.yml run --rm backend sh -c "python manage.py migrate --noinput"
+
+    - name: Run tests
+      run: |
+        docker compose -f Docker-compose.yml run --rm backend pytest -vv
+
+    - name: Stop Docker Compose
+      if: always()
+      run: |
+        docker compose -f Docker-compose.yml down
+
+
+  Deploy:
+    if: ${{ always() && contains(join(needs.*.result, ','), 'success') }}
+    name: Deploy
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Connect and Execute Commands
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          cd ${{ secrets.PROJECT_PATH }}
+
+          # دریافت آخرین تغییرات
+          git fetch --all
+          git reset --hard origin/main
+
+          # کشیدن و ری‌بیلد کانتینرها
+          docker-compose -f docker-compose-stage.yml pull
+          docker-compose -f docker-compose-stage.yml up -d --build
+
+          # صبر تا backend آماده شود
+          until docker exec backend curl -s localhost:8000; do
+            echo "Waiting for backend..."
+            sleep 2
+          done
+
+          # نصب پکیج‌ها، مایگریشن و جمع‌آوری static
+          docker exec backend sh -c "pip install -r requirements.txt"
+          docker exec backend sh -c "python manage.py migrate"
+          docker exec backend sh -c "python manage.py collectstatic --noinput"
+
+          # ریستارت کل کانتینرها
+          docker-compose -f docker-compose-stage.yml restart
+
+
